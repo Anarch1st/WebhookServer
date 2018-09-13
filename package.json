@@ -15,7 +15,7 @@
   },
   "devDependencies": {
     "gulp": "^3.9.1",
-    "gulp-scp": "0.0.3",
+    "gulp-scp2": "^0.2.0",
     "gulp-ssh": "^0.7.0",
     "nodemon": "^1.18.4"
   }

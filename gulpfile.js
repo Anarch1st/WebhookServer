@@ -1,7 +1,7 @@
 const gulp = require('gulp');
 const nodemon = require('nodemon');
 const gulpssh  = require('gulp-ssh');
-const scp = require('gulp-scp');
+const scp = require('gulp-scp2');
 
 gulp.task('default', function(){
 	nodemon({
@@ -18,11 +18,11 @@ var config = {
 		username: 'pi',
 		privateKey: require('fs').readFileSync('/home/saii/.ssh/id_rsa'),
 		passphrase: '6SaNdY2',
-		dest: '/home/pi/Documents/node-server'
+		dest: '/home/pi/Documents/WebhookServer'
 	};
 
 gulp.task('push', function() {
-	return gulp.src('../WebhookServer/**/*.*')
+	return gulp.src(['server/**/*.*', '*.*'])
 	.pipe(scp(config))
 	.on('error', function (err) {
 		console.log(err);
@@ -31,5 +31,5 @@ gulp.task('push', function() {
 
 var ssh = new gulpssh({sshConfig: config});
 gulp.task('run', function() {
-	return ssh.exec('node /home/pi/Documents/node-server/server/app.js >> /home/pi/Documents/node-server/server.log 2>&1 &');
+	return ssh.exec('node /home/pi/Documents/WebhookServer/webhook.js >> /home/pi/Documents/node-server/server.log 2>&1 &');
 });
