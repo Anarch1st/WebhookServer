@@ -36,9 +36,9 @@ app.post('/webhook/post', function(req, res) {
 	execSync('echo Starting Server');
 	execSync('pm2 start server/app.js',
 	 {cwd: '/home/pi/Documents/WaspServer'});
-	execSync('saving config');
+	execSync('echo saving config');
 	execSync('pm2 save');
-	execSync('done');
+	execSync('echo done');
 
 });
 
