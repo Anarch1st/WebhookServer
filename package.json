@@ -1,0 +1,22 @@
+{
+  "name": "webhookserver",
+  "version": "1.0.0",
+  "description": "Webhook server for WaspServer",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anarch1st/WebhookServer.git"
+  },
+  "author": "Saii",
+  "license": "ISC",
+  "homepage": "https://github.com/Anarch1st/WebhookServer#readme",
+  "dependencies": {
+    "express": "^4.16.3"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-scp": "0.0.3",
+    "gulp-ssh": "^0.7.0",
+    "nodemon": "^1.18.4"
+  }
+}
