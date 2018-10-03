@@ -10,6 +10,8 @@ app.use(express.urlencoded({ extended: true }));
 
 app.post('/webhook/post', function(req, res) {
 	const payload = req.body;
+	const name = payload.repository.name;
+
 	var tempArray = payload.ref.split('/');
 
 	const branch = tempArray[tempArray.length - 1];
@@ -25,7 +27,7 @@ app.post('/webhook/post', function(req, res) {
 			branch: branch,
 			updated: "Yes"});
 
-	server.update(branch);
+	server.update(name, branch);
 
 });
 
