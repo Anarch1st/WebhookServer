@@ -17,7 +17,7 @@ var config = {
 		host: '192.168.100.2',
 		username: 'pi',
 		privateKey: require('fs').readFileSync('/home/saii/.ssh/id_rsa'),
-		passphrase: '6SaNdY2',
+		// passphrase: '6SaNdY2',
 		dest: '/home/pi/Documents/WebhookServer'
 	};
 

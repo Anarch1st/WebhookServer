@@ -29,6 +29,9 @@ app.post('/webhook/post', function(req, res) {
 
 });
 
+const notify = require('./notify');
+app.use('/notify', notify);
+
 httpServer.listen(process.env.PORT || 8010, function() {
 	console.log("WebHookServer started on port: "+httpServer.address().port);
 });
