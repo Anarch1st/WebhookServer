@@ -3,54 +3,79 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 
 const serverDir = '/home/pi/Servers';
-function serviceDir(service) {
-	return serverDir+'/'+service;
+function repoDir(repo) {
+	return serverDir+'/'+repo;
 }
-function publicDir(service) {
-	return serviceDir(service)+'/public';
+function publicDir(repo) {
+	return repoDir(repo)+'/public';
 }
-function privateDir(service) {
-	return serviceDir(service)+'/private';
+function privateDir(repo) {
+	return repoDir(repo)+'/private';
 }
-function tempDir(service) {
-	return serverDir+'/temp/'+service;
+function tempDir(repo) {
+	return serverDir+'/temp/'+repo;
 }
-function app(service) {
-	return serviceDir(service)+'/server/'+service.toLowerCase();
+function app(repo) {
+	return repoDir(repo)+'/server/'+repo.toLowerCase()+'.js';
 }
 
 
-function update(service, branch) {
+function update(repo, branch) {
 
+	console.log("Repository: "+repo);
 	var serverList = [];
-	if (service === "WaspServer") {
-		var temp = execSync('pm2 jlist');
-		var json = JSON.parse(temp);
-		for (var ser of json) {
-			serverList.push(ser.name);
-		}
-		execSync('pm2 stop all');
-	} else if (service !== 'WebhookServer') {
-		serverList.push(service.toLowerCase());
-		execSync('pm2 stop '+service.toLowerCase());
+	if (repo === "WaspServer") {
+		try {
+			var temp = execSync('pm2 jlist');
+			var json = JSON.parse(temp);
+			for (var ser of json) {
+				serverList.push(ser.name);
+			}
+			execSync('pm2 stop all');
+		} catch (err) {}
+	} else if (repo !== 'WebhookServer') {
+		serverList.push(repo.toLowerCase());
+		try {
+			execSync('pm2 stop '+repo.toLowerCase());
+		} catch(err) {}
 	}
+	console.log("Server list: "+serverList);
 
-	execSync('cp -R '+privateDir(service)+' '+tempDir(service));
-	execSync('rm -rf '+serviceDir(service));
-	execSync('git clone git@github.com:Anarch1st/'+service+'.git', {cwd: serverDir});
-	execSync('git checkout '+branch, {cwd: serviceDir(service)});
-	execSync('npm install', {cwd: serviceDir(service)});
-	execSync('npm install', {cwd: publicDir(service)});
-	execSync('cp -R '+tempDir(service)+' '+privateDir(service));
+	try {
+		execSync('cp -R '+privateDir(repo)+' '+tempDir(repo));
+		console.log("Copy private folder to temp");
+	} catch (err) {}
+	try {
+		execSync('rm -rf '+repoDir(repo));
+		console.log("Remove private folder");
+	} catch (err) {}
 
-	if (service === 'WebhookServer') {
+	console.log('Cloning');
+	execSync('git clone git@github.com:Saii626/'+repo+'.git', {cwd: serverDir});
+	console.log('Checking out');
+	execSync('git checkout '+branch, {cwd: repoDir(repo)});
+	console.log('Installing dependencies');
+	execSync('npm install', {cwd: repoDir(repo)});
+	try {
+		execSync('npm install', {cwd: publicDir(repo)});
+		console.log('Installing public dependencies');
+	} catch(err) {}
+	try {
+		execSync('cp -R '+tempDir(repo)+' '+privateDir(repo));
+		console.log("Copy temp private folder to private");
+	} catch(err) {}
+
+	if (repo === 'WebhookServer') {
 		execSync('pm2 save');
 		execSync('pm2 restart webhookserver');
+		console.log("Updated");
 	} else {
 		for (var server of serverList) {
+			console.log('Starting server: ' + repo);
 			execSync('pm2 start '+app(server));
 		}
 		execSync('pm2 save');
+		console.log("Updated");
 	}
 }
 
