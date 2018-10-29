@@ -72,7 +72,7 @@ function update(repo, branch) {
 	} else {
 		for (var server of serverList) {
 			console.log('Starting server: ' + repo);
-			execSync('pm2 start '+app(server));
+			execSync('pm2 start '+app(repo));
 		}
 		execSync('pm2 save');
 		console.log("Updated");

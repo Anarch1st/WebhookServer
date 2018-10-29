@@ -12,9 +12,14 @@ app.post('/webhook/post', function(req, res) {
 	const payload = req.body;
 	const name = payload.repository.name;
 
-	var tempArray = payload.ref.split('/');
+	var branch = null;
 
-	const branch = tempArray[tempArray.length - 1];
+	if(payload.ref) {
+		var tempArray = payload.ref.split('/');
+		branch = tempArray[tempArray.length - 1];
+	} else {
+		branch = 'master';
+	}
 
 	if (branch != 'master') {
 		res.send({status : "success",
