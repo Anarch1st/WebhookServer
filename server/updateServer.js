@@ -49,6 +49,8 @@ function update(repo, branch) {
       console.error(err);
       copyPrivateToTemp(repo, branch)
     }
+  } else {
+    removeOldServer(repo, branch);
   }
 }
 
@@ -199,7 +201,7 @@ function notify(msg) {
   }
   request.post({
     url: 'http://localhost:8020/zuk',
-    form: postData
+    json: postData
   }, function(err, res, body) {
     if (err) {
       console.error(err);
@@ -207,7 +209,7 @@ function notify(msg) {
   });
   request.post({
     url: 'http://localhost:8020/thinkpad',
-    form: postData
+    json: postData
   }, function(err, res, body) {
     if (err) {
       console.error(err);
