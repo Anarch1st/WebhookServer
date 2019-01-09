@@ -28,69 +28,58 @@ function app(repo) {
 
 function update(repo, branch) {
   console.log("Repository: " + repo);
+
+  let notify = getNotifyFor(repo);
   if (repo === "WaspServer") {
     notify("Stopping all servers");
     exec('pm2 stop all', (err, stdOut, stdErr) => {
       if (err) {
         console.error(err);
       }
-      copyPrivateToTemp(repo, branch)
+      copyPrivateToTemp(repo, branch, notify)
     })
   } else if (repo !== 'WebhookServer') {
-    try {
-      notify("Stopping " + repo);
-      exec('pm2 stop ' + repo.toLowerCase(), (err, stdOut, stdErr) => {
-        if (err) {
-          console.error(err);
-        }
-        copyPrivateToTemp(repo, branch)
-      });
-    } catch (err) {
-      console.error(err);
-      copyPrivateToTemp(repo, branch)
-    }
+    notify("Stopping " + repo);
+    exec('pm2 stop ' + repo.toLowerCase(), (err, stdOut, stdErr) => {
+      if (err) {
+        console.error(err);
+      }
+      copyPrivateToTemp(repo, branch, notify)
+    });
   } else {
-    removeOldServer(repo, branch);
+    removeOldServer(repo, branch, notify);
   }
 }
 
-function copyPrivateToTemp(repo, branch) {
-  try {
-    notify("Copying private to temp");
-    exec('cp -R ' + privateDir(repo) + ' ' + tempDir(repo), (err, stdOut, stdErr) => {
-      if (err) {
-        console.error(err);
-      }
-      removeOldServer(repo, branch);
-    });
-  } catch (err) {
-    console.error(err);
-    removeOldServer(repo, branch);
-  }
+function copyPrivateToTemp(repo, branch, notify) {
+  notify("Copying private to temp");
+  exec('cp -R ' + privateDir(repo) + ' ' + tempDir(repo), (err, stdOut, stdErr) => {
+    if (err) {
+      console.error(err);
+    }
+    removeOldServer(repo, branch, notify);
+  });
 }
 
-function removeOldServer(repo, branch) {
-  try {
-    notify("Removing old Server");
-    exec('rm -rf ' + repoDir(repo), (err, stdOut, stdErr) => {
-      if (err) {
-        console.error(err);
-        notify("Unable to remove ");
-        return;
-      }
-      getNewServer(repo, branch);
-    });
-  } catch (err) {
-    console.error(err);
-  }
+function removeOldServer(repo, branch, notify) {
+  notify("Removing old Server");
+  exec('rm -rf ' + repoDir(repo), (err, stdOut, stdErr) => {
+    if (err) {
+      console.error(err);
+      notify("Unable to remove ");
+      return;
+    }
+    getNewServer(repo, branch, notify);
+  });
 }
 
-function getNewServer(repo, branch) {
+function getNewServer(repo, branch, notify) {
   notify("Cloning new server");
   exec('git clone git@github.com:Saii626/' + repo + '.git', {
     cwd: serverDir
   }, (err, stdOut, stdErr) => {
     if (err) {
+      console.error(err);
       return;
     }
 
@@ -100,12 +89,12 @@ function getNewServer(repo, branch) {
       if (err) {
         console.err(err);
       }
-      installServerDependencies(repo, branch);
+      installServerDependencies(repo, branch, notify);
     })
   });
 }
 
-function installServerDependencies(repo, branch) {
+function installServerDependencies(repo, branch, notify) {
   notify("Installing server dependencies");
   exec('npm install', {
     cwd: repoDir(repo)
@@ -114,41 +103,33 @@ function installServerDependencies(repo, branch) {
       notify("Server dependency installation failed");
       return;
     }
-    installClientDependencies(repo, branch);
+    installClientDependencies(repo, branch, notify);
   });
 }
 
-function installClientDependencies(repo, branch) {
-  try {
-    notify("Installing public dependencies")
-    exec('npm install', {
-      cwd: publicDir(repo)
-    }, (err, stdOut, stdErr) => {
-      if (err) {
-        console.error(err);
-      }
-      copyTempToPrivate(repo, branch);
-    });
-  } catch (err) {
-    copyTempToPrivate(repo, branch);
-  }
+function installClientDependencies(repo, branch, notify) {
+  notify("Installing public dependencies")
+  exec('npm install', {
+    cwd: publicDir(repo)
+  }, (err, stdOut, stdErr) => {
+    if (err) {
+      console.error(err);
+    }
+    copyTempToPrivate(repo, branch, notify);
+  });
 }
 
-function copyTempToPrivate(repo, branch) {
-  try {
-    notify("Copying temp to private")
-    exec('cp -R ' + tempDir(repo) + ' ' + privateDir(repo), (err, stdOut, stdErr) => {
-      if (err) {
-        console.error(err);
-      }
-      startNewServer(repo, branch);
-    });
-  } catch (err) {
-    startNewServer(repo, branch);
-  }
+function copyTempToPrivate(repo, branch, notify) {
+  notify("Copying temp to private")
+  exec('cp -R ' + tempDir(repo) + ' ' + privateDir(repo), (err, stdOut, stdErr) => {
+    if (err) {
+      console.error(err);
+    }
+    startNewServer(repo, branch, notify);
+  });
 }
 
-function startNewServer(repo, branch) {
+function startNewServer(repo, branch, notify) {
   notify("Starting servers and saving config");
   if (repo === 'WebhookServer') {
     exec('pm2 save', (err, stdOut, stdErr) => {
@@ -170,13 +151,18 @@ function startNewServer(repo, branch) {
       if (err) {
         notify("Unable to start servers")
       }
-
-      exec('pm2 save', (err, stdOut, stdErr) => {
+      exec('pm2 start ' + app(repo), (err, stdOut, stdErr) => {
         if (err) {
-          console.error(err);
+          notify("Unable to start " + repo);
         }
-        notify("Server updated");
-      })
+
+        exec('pm2 save', (err, stdOut, stdErr) => {
+          if (err) {
+            console.error(err);
+          }
+          notify("Server updated");
+        });
+      });
     });
   }
 
@@ -194,27 +180,29 @@ function execute(cmd, options, cb, args) {
   }
 }
 
-function notify(msg) {
-  let postData = {
-    title: "WebHookServer",
-    body: msg
+function getNotifyFor(repo) {
+  return (msg) => {
+    let postData = {
+      title: "WebHookServer: " + repo,
+      body: msg
+    }
+    request.post({
+      url: 'http://localhost:8020/zuk',
+      json: postData
+    }, function(err, res, body) {
+      if (err) {
+        console.error(err);
+      }
+    });
+    request.post({
+      url: 'http://localhost:8020/thinkpad',
+      json: postData
+    }, function(err, res, body) {
+      if (err) {
+        console.error(err);
+      }
+    });
   }
-  request.post({
-    url: 'http://localhost:8020/zuk',
-    json: postData
-  }, function(err, res, body) {
-    if (err) {
-      console.error(err);
-    }
-  });
-  request.post({
-    url: 'http://localhost:8020/thinkpad',
-    json: postData
-  }, function(err, res, body) {
-    if (err) {
-      console.error(err);
-    }
-  });
 }
 
 module.exports.update = update;
