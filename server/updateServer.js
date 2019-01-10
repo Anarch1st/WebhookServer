@@ -53,7 +53,7 @@ function update(repo, branch) {
 
 function copyPrivateToTemp(repo, branch, notify) {
   notify("Copying private to temp");
-  exec('cp -R ' + privateDir(repo) + ' ' + tempDir(repo), (err, stdOut, stdErr) => {
+  exec('cp -RT ' + privateDir(repo) + ' ' + tempDir(repo), (err, stdOut, stdErr) => {
     if (err) {
       console.error(err);
     }
@@ -121,7 +121,7 @@ function installClientDependencies(repo, branch, notify) {
 
 function copyTempToPrivate(repo, branch, notify) {
   notify("Copying temp to private")
-  exec('cp -R ' + tempDir(repo) + ' ' + privateDir(repo), (err, stdOut, stdErr) => {
+  exec('cp -RT ' + tempDir(repo) + ' ' + privateDir(repo), (err, stdOut, stdErr) => {
     if (err) {
       console.error(err);
     }
